@@ -1,0 +1,18 @@
+{
+    "name": "EasyTimer",
+    "description": "A simple timer.",
+    "version": "1.0",
+    "manifest_version": 2,
+
+    "background": {
+        "scripts": ["background.js"],
+        "persistent": false
+    },
+
+    "browser_action": {
+        // make an icon
+        "default_popup":"popup.html"
+    },
+
+    "permissions": ["storage"]
+}
