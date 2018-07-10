@@ -1,2 +1,2 @@
 # EasyTimer
-IN PROGRESS: a simple timer
+IN PROGRESS: a simple timer chrome extension
