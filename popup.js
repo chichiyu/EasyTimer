@@ -1,72 +1,108 @@
 var b30min = document.getElementById("30min");
+var b1hr = document.getElementById("1hr");
+var bstart = document.getElementById('start');
 var bcancel = document.getElementById("cancel");
-var output = document.getElementById("output");
-var timer;
+var brestart = document.getElementById("restart");
 
-// loads the timer
-chrome.storage.local.get('start', function(result){
+var input = document.getElementById("input");
+var output = document.getElementById("output");
+
+
+const msInMin = 60000;
+var length; // length of the current timer in use
+
+// loads the time when opening popup
+chrome.storage.local.get(null, function(result){
     var startTime = result['start'];
+    length = result['length'];
 
     if (startTime !== null) {
-        displayTime(startTime);
-        b30min.innerHTML = "Restart"
-        timer = setInterval(function() {displayTime(startTime);}, 1000);
+        startedDisplay();
+        chrome.extension.getBackgroundPage().displayTime(startTime, length);
     }
 });
 
 b30min.onclick = function() {
     output.innerHTML = "00:30:00";
-    b30min.innerHTML = "Restart";
+    length = 1800000;
+    initialize();
+}
+
+b1hr.onclick = function() {
+    output.innerHTML = "01:00:00";
+    length = 3600000;
+    initialize();
+}
+
+bstart.onclick = function() {
+    var min = input.value
+    length = Math.floor(min * msInMin / 1000) * 1000;
+    initialize();
+}
+
+brestart.onclick = restart;
+
+bcancel.onclick = function() {
+    chrome.runtime.sendMessage({
+        msg: "cancelBackground",
+    })
+    cancel();
+}
+
+chrome.runtime.onMessage.addListener(
+    function(request, sender, sendResponse) {
+        if (request.msg === "timeString") {
+            output.innerHTML = request.data;
+        }
+        if (request.msg === "cancelPopup") {
+            cancel();
+        }
+    }
+);
+
+function restart() {
+    output.innerHTML = chrome.extension.getBackgroundPage().msToString(length, "withHr");
+    chrome.alarms.clear('alarm1', function(){
+        chrome.alarms.create('alarm1', {delayInMinutes: length / msInMin});
+    })
 
     var startTime = new Date().getTime();
-    chrome.storage.local.set({start: startTime});
-    clearInterval(timer);
-    timer = setInterval(function() {displayTime(startTime);}, 1000);
+    chrome.storage.local.set({start: startTime})
+
+    chrome.runtime.sendMessage({
+        msg: "restart",
+        data: [startTime, length]
+    })
 }
 
-bcancel.onclick = cancelTimer;
+function cancel() {
+    endedDisplay();
+    output.innerHTML = "";
 
-// display time passed since start
-function displayTime(startTime) {
-    const msInHour = 3600000;
-    const msInMin = 60000;
-    const msInSec = 1000;
-    const totalMs = 1800999; // such that there is time for calculations
-
-    var curTime = new Date().getTime();
-    ms = totalMs - (curTime - startTime);
-
-    if (ms <= 0) {
-        cancelTimer();
-        alert("TIME IS UP!")
-        return;
-    }
-
-    var hour = Math.floor(ms / msInHour);
-    var min = Math.floor((ms % msInHour) / msInMin);
-    var sec = Math.floor((ms % msInMin) / msInSec);
-
-    var time = toString(hour) + ":" + toString(min) + ":" + toString(sec);
-    
-    chrome.extension.getBackgroundPage().console.log(time);
-    output.innerHTML = time;
+    chrome.storage.local.set({start: null, length: null});
+    chrome.alarms.clear('alarm1');
 }
 
-// when a user clicks cancel or when time is up
-function cancelTimer() {
-    clearInterval(timer);
-    output.innerHTML = "00:00:00";
-    b30min.innerHTML = "30 min"
-    chrome.storage.local.set({start: null}, function(){
-        chrome.extension.getBackgroundPage().console.log("CLEARED")
-    });
-    
+function initialize() {
+    startedDisplay();
+    chrome.alarms.create('alarm1', {delayInMinutes: length / msInMin});
+
+    var startTime = new Date().getTime();
+    chrome.storage.local.set({start: startTime, length: length});
+
+    chrome.runtime.sendMessage({
+        msg: "start",
+        data: [startTime, length]
+    })
 }
 
-// converts a number to a string with 0 added if necessary
-function toString(num) {
-    var s = num < 10 ? "0" + String(num) : String(num);
-    return s;
+function startedDisplay() {
+    document.getElementById('beforegroup').style.display = 'none';
+    document.getElementById('aftergroup').style.display = 'inline';
 }
 
+function endedDisplay() {
+    document.getElementById('beforegroup').style.display = 'inline';
+    document.getElementById('aftergroup').style.display = 'none';
+}
 

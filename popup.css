@@ -1,0 +1,12 @@
+body {
+    width: 125px;
+    height: 100px;
+}
+
+#output {
+    text-align: center;
+}
+
+#input {
+    width: 80px
+}

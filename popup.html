@@ -1,13 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+    <link rel="stylesheet" type="text/css" href="popup.css">
     <head>
         <meta charset="UTF-8">
         <title></title>
     </head>
     <body>
-        <button id="30min">30 min</button>
-        <button id="cancel">Cancel</button>
-        <div id="output">00:00:00</div>
+        <div id="beforegroup" >
+            <button id="30min">30 min</button>
+            <button id="1hr">1 hr</button>
+            <input type="number" value="1" id="input"> min
+            <button id="start">Start Timer</button>
+        </div>
+        <div id="aftergroup" style="display:none">
+            <button id="restart">Restart</button>
+            <button id="cancel">Cancel</button>
+            <div id="output">00:00:00</div>
+        </div>
 
         <script src="popup.js"></script>
     </body>
