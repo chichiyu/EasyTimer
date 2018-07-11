@@ -1,44 +1,42 @@
-var b30min = document.getElementById("30min");
-var b1hr = document.getElementById("1hr");
-var bstart = document.getElementById('start');
 var bcancel = document.getElementById("cancel");
 var brestart = document.getElementById("restart");
+var badd = document.getElementById("add");
 
 var input = document.getElementById("input");
+var inputBox = document.getElementById("inputBox");
 var output = document.getElementById("output");
 
+var beforeGroup = document.getElementById('beforegroup');
+var afterGroup = document.getElementById('aftergroup');
 
+const msInHour = 3600000;
 const msInMin = 60000;
+const msInSec = 1000;
+
 var length; // length of the current timer in use
 
 // loads the time when opening popup
-chrome.storage.local.get(null, function(result){
-    var startTime = result['start'];
-    length = result['length'];
+chrome.storage.local.get('currentTimer', function(result){
+    var startTime = result.currentTimer.start;
+    length = result.currentTimer.length;
 
     if (startTime !== null) {
         startedDisplay();
         chrome.extension.getBackgroundPage().displayTime(startTime, length);
-    }
+    } 
 });
 
-b30min.onclick = function() {
-    output.innerHTML = "00:30:00";
-    length = 1800000;
-    initialize();
-}
+chrome.storage.local.get('time', function(result) {
+    var times = result.time;
+    for (var time of times) {
+        addTime(time / msInMin);
+    }
+})
 
-b1hr.onclick = function() {
-    output.innerHTML = "01:00:00";
-    length = 3600000;
-    initialize();
-}
-
-bstart.onclick = function() {
-    var min = input.value
-    length = Math.floor(min * msInMin / 1000) * 1000;
-    initialize();
-}
+badd.onclick = function() {
+    addTime(input.value); 
+    storeTime(input.value)
+};
 
 brestart.onclick = restart;
 
@@ -47,7 +45,7 @@ bcancel.onclick = function() {
         msg: "cancelBackground",
     })
     cancel();
-}
+};
 
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
@@ -67,7 +65,7 @@ function restart() {
     })
 
     var startTime = new Date().getTime();
-    chrome.storage.local.set({start: startTime})
+    chrome.storage.local.set({currentTimer: {start: startTime, length: length}});
 
     chrome.runtime.sendMessage({
         msg: "restart",
@@ -79,30 +77,88 @@ function cancel() {
     endedDisplay();
     output.innerHTML = "";
 
-    chrome.storage.local.set({start: null, length: null});
+    chrome.storage.local.set({currentTimer: {start: null, length: null}});
     chrome.alarms.clear('alarm1');
 }
 
-function initialize() {
+function initialize(time) {
     startedDisplay();
-    chrome.alarms.create('alarm1', {delayInMinutes: length / msInMin});
+    chrome.alarms.create('alarm1', {delayInMinutes: time / msInMin});
 
     var startTime = new Date().getTime();
-    chrome.storage.local.set({start: startTime, length: length});
-
+    chrome.storage.local.set({currentTimer: {start: startTime, length: time}});
+    length = time; // for restart
     chrome.runtime.sendMessage({
         msg: "start",
-        data: [startTime, length]
+        data: [startTime, time]
+    })
+
+}
+
+// adds the time to the screen
+function addTime(min) {
+    var time = Math.floor(min * msInMin / 1000) * 1000; // round to the nearest second
+
+    // create a new button
+    var newTimeButton = document.createElement("button");
+    var newTimeString = chrome.extension.getBackgroundPage().msToString(time, "withHr");
+    var text = document.createTextNode(newTimeString);
+    newTimeButton.appendChild(text);
+    newTimeButton.classList.add("timeButton");
+    newTimeButton.onclick = function() {initialize(time)};
+
+    var newMinusButton = document.createElement("button");
+    var minus = document.createTextNode("-");
+    newMinusButton.appendChild(minus);
+    newMinusButton.classList.add("minusButton");
+    newMinusButton.onclick = function() {deleteTime(newMinusButton)};
+
+    beforeGroup.insertBefore(newTimeButton, inputBox);
+    beforeGroup.insertBefore(newMinusButton, inputBox);
+}
+
+// stores the time to google storage
+function storeTime(min) {    
+    var time = Math.floor(min * msInMin / 1000) * 1000;
+
+    // store the time added
+    chrome.storage.local.get('time', function(result){
+        var times = result.time;
+        times.push(time);
+        times.sort(function(a, b) {return a - b});
+        console.log(times);
+        chrome.storage.local.set({time: times});
     })
 }
 
+function deleteTime(button) {
+    var parent = button.parentNode;
+    var time = stringToMs(button.previousSibling.innerHTML);
+
+    parent.removeChild(button.previousSibling);
+    parent.removeChild(button);
+    
+    // remove the time from storage
+    chrome.storage.local.get('time', function(result){
+        var times = result.time;
+        var index = times.indexOf(time);
+        times.splice(index, 1);
+        console.log(times);
+        chrome.storage.local.set({time: times});
+    })
+}
+
+function stringToMs(string) {
+    var split = string.split(":").map(x => parseInt(x));
+    return split[0] * msInHour + split[1] * msInMin + split[2] * msInSec;
+}
 function startedDisplay() {
-    document.getElementById('beforegroup').style.display = 'none';
-    document.getElementById('aftergroup').style.display = 'inline';
+    beforeGroup.style.display = 'none';
+    afterGroup.style.display = 'inline';
 }
 
 function endedDisplay() {
-    document.getElementById('beforegroup').style.display = 'inline';
-    document.getElementById('aftergroup').style.display = 'none';
+    beforeGroup.style.display = 'inline';
+    afterGroup.style.display = 'none';
 }
 

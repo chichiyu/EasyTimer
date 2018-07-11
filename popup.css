@@ -1,5 +1,9 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
-    width: 125px;
+    width: 150px;
     height: 100px;
 }
 
@@ -7,6 +11,66 @@ body {
     text-align: center;
 }
 
+/* input box formatting */
 #input {
-    width: 80px
+    width: 66px;
+    font-size: 15px;
+}
+
+#inputBox {
+    margin: 20px 0px;
+    width: 100px;
+    font-size: 15px;
+    display: inline-block;
+}
+
+/* time button formatting */
+.timeButton {
+    background-color: #555555;
+    font-size: 15px;
+    color: white;
+    padding: 9px 20px;
+    border: 2px solid #333333; 
+    display: inline-block; 
+    text-align: center;
+    width: 100px;
+    cursor: pointer;
+}
+
+.timeButton:not(:nth-last-of-type(3)) {
+    border-bottom: none
+}
+
+.timeButton:hover {
+    background-color: white;
+    color: #333333;
+}
+
+/* add button formatting */
+.addButton {
+    background-color: #4CAF50;
+}
+
+.addButton:hover {
+    background-color: #8DD38D;
+}
+
+.minusButton {
+    background-color: #F44336;
+}
+
+
+.minusButton:hover {
+    background-color: #F5A0A0;
+}
+
+.addButton, .minusButton {
+    color: white;
+    font-family: "Courier New", Courier, monospace;
+    padding: 1px 5px;
+    border-radius: 50%;
+    border: none;
+    position: relative;
+    left: 20px;
+    cursor: pointer;
 }

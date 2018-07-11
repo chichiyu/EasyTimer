@@ -5,11 +5,16 @@ const msInSec = 1000;
 var timer;
 var length;
 
+// when installed store 30 min and 1 hr to the database
+chrome.runtime.onInstalled.addListener(function() {
+    chrome.storage.local.set({time: [1800000, 3600000]});
+})
+
 // resume timing after reopening browser
 if (timer === undefined) {
-    chrome.storage.local.get(null, function(result){
-        var startTime = result['start'];
-        length = result['length'];
+    chrome.storage.local.get('currentTimer', function(result){
+        var startTime = result.currentTimer.start;
+        length = result.currentTimer.length;
         if (startTime !== null) {
             var minLeft = (length - (new Date().getTime() - startTime)) / msInMin;
             if (minLeft > 0) {
@@ -17,7 +22,7 @@ if (timer === undefined) {
                 timer = setInterval(function() {displayTime(startTime, length);}, 1000);
             }
             else {
-                chrome.storage.local.set({start: null, length: null});
+                chrome.storage.local.set({currentTimer: {start: null, length: null}});
             }
         }
     });
@@ -29,8 +34,10 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
         type: 'basic',
         iconUrl: 'icon_128.png',
         title: 'Time\'s up!',
-        message: msToString(length, "withWords") + 'is over'
+        message: msToString(length, "withWords") + ' is over'
     })
+    var sound = new Audio('alarm.mp3');
+    sound.play();
 })
 
 chrome.runtime.onMessage.addListener(
@@ -96,8 +103,12 @@ function msToString(ms, type) {
     else if (type === "noSec")
         return toString(hour) + ":" + toString(min);
     else if (type === "withWords") {
-        return hour === 0 ? min === 0 ? sec + " s " : min + " m " + sec + 
-        " s " : hour + " h " + min + " m " + sec + " s ";
+        var string = '';
+        if (hour > 0) string += (hour + ' h');
+        if (min > 0) string += (min + ' m');
+        if (sec > 0) string += (sec + ' s');
+        if (string === '') string = '0 s'
+        return string;
     }
 }
 
