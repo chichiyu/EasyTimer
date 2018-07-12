@@ -4,6 +4,7 @@ var badd = document.getElementById("add");
 
 var input = document.getElementById("input");
 var inputBox = document.getElementById("inputBox");
+var invalid = document.getElementById("invalid");
 var output = document.getElementById("output");
 
 var beforeGroup = document.getElementById('beforegroup');
@@ -14,6 +15,7 @@ const msInMin = 60000;
 const msInSec = 1000;
 
 var length; // length of the current timer in use
+var times; // the times array we currently have
 
 // loads the time when opening popup
 chrome.storage.local.get('currentTimer', function(result){
@@ -27,15 +29,20 @@ chrome.storage.local.get('currentTimer', function(result){
 });
 
 chrome.storage.local.get('time', function(result) {
-    var times = result.time;
+    times = result.time;
     for (var time of times) {
         addTime(time / msInMin);
     }
 })
 
 badd.onclick = function() {
-    addTime(input.value); 
-    storeTime(input.value)
+    if (input.value > 0) {
+        addTime(input.value); 
+        storeTime(input.value);
+        invalid.style.display = "none";
+    } else {
+        invalid.style.display = "block";
+    }
 };
 
 brestart.onclick = restart;
@@ -122,13 +129,9 @@ function storeTime(min) {
     var time = Math.floor(min * msInMin / 1000) * 1000;
 
     // store the time added
-    chrome.storage.local.get('time', function(result){
-        var times = result.time;
-        times.push(time);
-        times.sort(function(a, b) {return a - b});
-        console.log(times);
-        chrome.storage.local.set({time: times});
-    })
+    times.push(time);
+    times.sort(function(a, b) {return a - b});
+    chrome.storage.local.set({time: times});
 }
 
 function deleteTime(button) {
@@ -139,13 +142,9 @@ function deleteTime(button) {
     parent.removeChild(button);
     
     // remove the time from storage
-    chrome.storage.local.get('time', function(result){
-        var times = result.time;
-        var index = times.indexOf(time);
-        times.splice(index, 1);
-        console.log(times);
-        chrome.storage.local.set({time: times});
-    })
+    var index = times.indexOf(time);
+    times.splice(index, 1);
+    chrome.storage.local.set({time: times});
 }
 
 function stringToMs(string) {

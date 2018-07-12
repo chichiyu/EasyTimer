@@ -4,7 +4,7 @@
 
 body {
     width: 150px;
-    height: 100px;
+    height: 150px;
 }
 
 #output {
@@ -18,10 +18,14 @@ body {
 }
 
 #inputBox {
-    margin: 20px 0px;
+    margin: 20px 0px 0px;
     width: 100px;
     font-size: 15px;
     display: inline-block;
+}
+
+#invalid {
+    color: red;
 }
 
 /* time button formatting */
