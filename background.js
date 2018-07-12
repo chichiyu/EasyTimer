@@ -45,7 +45,7 @@ chrome.runtime.onMessage.addListener(
         if (request.msg === "start") {
             var startTime = request.data[0];
             length = request.data[1];
-            timer = setInterval(function() {displayTime(startTime, length);}, length / msInMin);
+            timer = setInterval(function() {displayTime(startTime, length);}, 1000);
         } else if (request.msg === "cancelBackground") {
             clearInterval(timer);
             chrome.browserAction.setBadgeText({text: ''});
@@ -53,7 +53,7 @@ chrome.runtime.onMessage.addListener(
             var startTime = request.data[0];
             length = request.data[1];
             clearInterval(timer);
-            timer = setInterval(function() {displayTime(startTime, length);}, length/ msInMin)
+            timer = setInterval(function() {displayTime(startTime, length);}, 1000)
         }
     }
 )
@@ -82,7 +82,13 @@ function displayTime(startTime, length) {
     })
 
     // display hh:mm or mm:ss for the badge depending on the remaining time
-    if (ms < 3600000) {
+    if (ms < 60000) {
+        chrome.browserAction.setBadgeText({text: msToString(ms, "noHr")});
+        chrome.browserAction.setBadgeBackgroundColor({color: "rgb(214, 23, 23)"});
+    } else if (ms < 600000) {
+        chrome.browserAction.setBadgeText({text: msToString(ms, "noHr")});
+        chrome.browserAction.setBadgeBackgroundColor({color: "rgb(173, 163, 0)"});
+    } else if (ms < 3600000) {
         chrome.browserAction.setBadgeText({text: msToString(ms, "noHr")});
         chrome.browserAction.setBadgeBackgroundColor({color: "rgb(0, 153, 22)"});
     } else {
