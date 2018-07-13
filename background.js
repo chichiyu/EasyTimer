@@ -2,27 +2,37 @@ const msInHour = 3600000;
 const msInMin = 60000;
 const msInSec = 1000;
 
-var timer;
-var length;
+var timer; // stores the timer used
+var originalLength; // saves the original length for alarm notification
 
 // when installed store 30 min and 1 hr to the database
 chrome.runtime.onInstalled.addListener(function() {
-    chrome.storage.local.set({time: [1800000, 3600000]});
+        chrome.storage.local.get("time", function(result) {
+            if (Object.keys(result).length === 0) {
+                chrome.storage.local.set({time: [1800000, 3600000]});
+            };
+        })
 })
 
 // resume timing after reopening browser
 if (timer === undefined) {
     chrome.storage.local.get('currentTimer', function(result){
         var startTime = result.currentTimer.start;
-        length = result.currentTimer.length;
+        var length = result.currentTimer.length;
+        var paused = result.currentTimer.paused;
+        originalLength = result.currentTimer.originalLength;
         if (startTime !== null) {
-            var minLeft = (length - (new Date().getTime() - startTime)) / msInMin;
-            if (minLeft > 0) {
-                chrome.alarms.create('alarm1', {delayInMinutes: minLeft});
-                timer = setInterval(function() {displayTime(startTime, length);}, 1000);
-            }
-            else {
-                chrome.storage.local.set({currentTimer: {start: null, length: null}});
+            if (!paused) {
+                var minLeft = (length - (new Date().getTime() - startTime)) / msInMin;                
+                if (minLeft > 0) {
+                    chrome.alarms.create('alarm1', {delayInMinutes: minLeft});
+                    timer = setInterval(function() {displayTime(startTime, length);}, 1000);
+                    setBadge(minLeft * msinMin);
+                } else {
+                    chrome.storage.local.set({currentTimer: {start: null, length: null, originalLength: null, paused: false}});
+                }
+            } else {
+                setBadge(length);
             }
         }
     });
@@ -32,38 +42,45 @@ if (timer === undefined) {
 chrome.alarms.onAlarm.addListener(function(alarm) {
     chrome.notifications.create('timesup', {
         type: 'basic',
-        iconUrl: 'icon_128.png',
+        iconUrl: 'image/icon_128.ico',
         title: 'Time\'s up!',
-        message: msToString(length, "withWords") + ' is over'
+        message: msToString(originalLength, "withWords") + ' is over'
     })
     var sound = new Audio('alarm.mp3');
     sound.play();
 })
 
+// receive messages and act accordingly
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (request.msg === "start") {
             var startTime = request.data[0];
-            length = request.data[1];
+            var length = request.data[1];
+            originalLength = request.data[2];
             timer = setInterval(function() {displayTime(startTime, length);}, 1000);
         } else if (request.msg === "cancelBackground") {
             clearInterval(timer);
             chrome.browserAction.setBadgeText({text: ''});
         } else if (request.msg === "restart") {
             var startTime = request.data[0];
-            length = request.data[1];
+            var length = request.data[1];
+            originalLength = length;
             clearInterval(timer);
-            timer = setInterval(function() {displayTime(startTime, length);}, 1000)
+            timer = setInterval(function() {displayTime(startTime, length);}, 1000);
+        } else if (request.msg === "pause") {
+            clearInterval(timer);
         }
     }
 )
 
-// display time passed since start
+// display time passed since start; if startTime === 0, display length;
 function displayTime(startTime, length) {
     var curTime = new Date().getTime();
 
-    // with an offset such that alarm rings when hitting 0
-    ms = length - (curTime - startTime) + 1000; 
+    // offset 500 is to make sure the setInterval function doesn't take less than 1000 ms
+    var ms;
+    if (startTime === 0) ms = length + 500;
+    else ms = length - (curTime - startTime) + 500; 
 
     if (ms <= 0) {
         clearInterval(timer);
@@ -80,8 +97,12 @@ function displayTime(startTime, length) {
         msg: "timeString",
         data: msToString(ms, "withHr")
     })
+    
+    setBadge(ms);
+}
 
-    // display hh:mm or mm:ss for the badge depending on the remaining time
+// display the badge (hh:mm / mm:ss) based on the number of ms left
+function setBadge(ms) {
     if (ms < 60000) {
         chrome.browserAction.setBadgeText({text: msToString(ms, "noHr")});
         chrome.browserAction.setBadgeBackgroundColor({color: "rgb(214, 23, 23)"});
@@ -95,9 +116,9 @@ function displayTime(startTime, length) {
         chrome.browserAction.setBadgeText({text: msToString(ms, "noSec")});
         chrome.browserAction.setBadgeBackgroundColor({color: "RoyalBlue"});
     }
-    
 }
 
+// converts milliseconds to a string, with the type specified by the second parameter
 function msToString(ms, type) {
     var hour = Math.floor(ms / msInHour);
     var min = Math.floor((ms % msInHour) / msInMin);

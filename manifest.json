@@ -1,6 +1,6 @@
 {
     "name": "EasyTimer",
-    "description": "A simple timer.",
+    "description": "A simple, user-friendly timer chrome extension.",
     "version": "1.0",
     "manifest_version": 2,
 
@@ -10,9 +10,19 @@
     },
 
     "browser_action": {
-        // make an icon
-        "default_popup":"popup.html"
+        "default_popup":"popup.html",
+        "default_icons": {
+            "16": "image/icon_16.ico",
+            "32": "image/icon_32.ico",
+            "48": "image/icon_48.ico",
+            "128": "image/icon_128.ico"
+        }
     },
-
+    "icons": {
+        "16": "image/icon_16.ico",
+        "32": "image/icon_32.ico",
+        "48": "image/icon_48.ico",
+        "128": "image/icon_128.ico"
+    },
     "permissions": ["storage", "alarms", "notifications"]
 }

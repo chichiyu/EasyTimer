@@ -11,12 +11,15 @@
                 <input type="number" value="1" id="input" min="0" max="1440" required> min
             </div>
             <button id="add" class="addButton">+</button>
-            <div id = "invalid" style="display:none">Please enter a valid number</div>
+            <div id = "invalid"></div>
         </div>
-        <div id="aftergroup" style="display:none">
-            <button id="restart">Restart</button>
-            <button id="cancel">Cancel</button>
+        <div id="aftergroup" style="display:none">  
             <div id="output">00:00:00</div>
+            <div id="controlButtons">
+                <button id="restart" class="control"><b>&#10226</b></button>
+                <button id="pause" class="control">&#10074&#10074</button>
+                <button id="cancel" class="control">&#9724</button>
+            </div>
         </div>
 
         <script src="popup.js"></script>
