@@ -3,7 +3,7 @@ A simple, user-friendly chrome extension that provides basic functionality of a 
 
 Note: image file is currently not working properly so in the demo it shows a puzzle piece.
 
-![demo 1 image](image/demo1.png)
-![demo 2 image](image/demo2.png)
-![demo 3 image](image/demo3.png)
-![demo 4 image](image/demo4.png)
+![demo 1 image](demo/demo1.png)
+![demo 2 image](demo/demo2.png)
+![demo 3 image](demo/demo3.png)
+![demo 4 image](demo/demo4.png)
